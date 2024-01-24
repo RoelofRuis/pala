@@ -1,4 +1,4 @@
-package lang_lab
+package pala
 
 import (
 	"fmt"
@@ -36,7 +36,7 @@ func TestParser(t *testing.T) {
 	lang.BindLiteralEvaluator(parseInt)
 
 	// Create a lexer from any source.
-	lexer := newLexer(strings.NewReader(program))
+	lexer := NewLexer(strings.NewReader(program))
 
 	// Combine lexer and language in a parser.
 	p := NewParser(lexer, lang)
@@ -52,7 +52,7 @@ func TestParser(t *testing.T) {
 	// Run the program with the context.
 	prog.Run(ctx)
 
-	actualLog := strings.Join(ctx.Log, "\n")
+	actualLog := ctx.String()
 	expectedLog := "added 2 and 4\nmultiplied 6 and 7"
 	if actualLog != expectedLog {
 		t.Errorf("expected context log to contain '%s' but got '%s'", expectedLog, actualLog)
@@ -63,6 +63,10 @@ func TestParser(t *testing.T) {
 
 type context struct {
 	Log []string
+}
+
+func (c context) String() string {
+	return strings.Join(c.Log, "\n")
 }
 
 func smallest(a []int) int {

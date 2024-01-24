@@ -1,4 +1,4 @@
-package lang_lab
+package pala
 
 import (
 	"io"
@@ -36,7 +36,7 @@ type basicLexer struct {
 	currLine  int
 }
 
-func newLexer(scanner io.RuneScanner) Lexer {
+func NewLexer(scanner io.RuneScanner) Lexer {
 	lexer := &basicLexer{scanner: scanner, next: readLine}
 	lexer.readChar()
 	return lexer

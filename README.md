@@ -1,17 +1,18 @@
 ## PArsed LAnguage
 
-A simple lexer/parser that generates an interpretable AST.
+A simple lexer/parser that generates a runnable program.
 
 It allows for dynamically binding operation and literal parsers.
 
 The grammar of a program has the form:
 ```
 Program    <- Expression ( '\n' Expression )* '\n'?
-Expression <- Variable ( Variable | List | Literal | Operator ) | Operator
+Expression <- Assignment | Operation | Comment
+Assignment <- Variable ( Variable | List | Literal | Operation )
 Operation  <- Literal ( List | Variable | Literal )*
 List       <- '[' ( Variable | Literal )+ ']'
 Variable   <- '$.+'
-Comment    <- '#.+
+Comment    <- '#.+'
 Literal    <- '.+'
 ```
 

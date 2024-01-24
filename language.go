@@ -1,4 +1,4 @@
-package lang_lab
+package pala
 
 import (
 	"fmt"
