@@ -15,4 +15,4 @@ Comment    <- '#.+
 Literal    <- '.+'
 ```
 
-See the comments in `parser_test.go` for an example on how to use.
+See the comments in `pala_test.go` for an example on how to use.

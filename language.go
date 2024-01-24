@@ -5,22 +5,22 @@ import (
 	"reflect"
 )
 
-type Expression[C any] func(context C) interface{}
+type expression[C any] func(context C) interface{}
 
-type ASTNode[C any] struct {
+type astNode[C any] struct {
 	returnType reflect.Type
-	Evaluate   Expression[C]
+	evaluate   expression[C]
 }
 
 type Language[C any] struct {
-	operators map[string]func(operands []ASTNode[C]) (ASTNode[C], error)
-	literals  []func(token token) (ASTNode[C], error)
+	operators map[string]func(operands []astNode[C]) (astNode[C], error)
+	literals  []func(token token) (astNode[C], error)
 }
 
 func NewLanguage[C any]() *Language[C] {
 	return &Language[C]{
-		operators: make(map[string]func(operands []ASTNode[C]) (ASTNode[C], error)),
-		literals:  []func(token token) (ASTNode[C], error){},
+		operators: make(map[string]func(operands []astNode[C]) (astNode[C], error)),
+		literals:  []func(token token) (astNode[C], error){},
 	}
 }
 
@@ -47,16 +47,16 @@ func (l *Language[C]) BindLiteralEvaluator(evaluator interface{}) {
 
 	returnType := funcType.Out(0)
 
-	primitive := func(token token) (ASTNode[C], error) {
+	primitive := func(token token) (astNode[C], error) {
 		values := funcValue.Call([]reflect.Value{reflect.ValueOf(token.value)})
 		value := values[0].Interface()
 		err := values[1].Interface()
 		if err != nil {
-			return ASTNode[C]{}, err.(error)
+			return astNode[C]{}, err.(error)
 		}
-		return ASTNode[C]{
+		return astNode[C]{
 			returnType: returnType,
-			Evaluate: func(context C) interface{} {
+			evaluate: func(context C) interface{} {
 				return value
 			},
 		}, nil
@@ -99,22 +99,22 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 		returnType = funcType.Out(0)
 	}
 
-	operator := func(operands []ASTNode[C]) (ASTNode[C], error) {
+	operator := func(operands []astNode[C]) (astNode[C], error) {
 		for i, operand := range operands {
 			if argTypes[i] != operand.returnType {
-				return ASTNode[C]{}, fmt.Errorf("operator operand %d expects %s but got %s", i, argTypes[i], operand.returnType)
+				return astNode[C]{}, fmt.Errorf("operator operand %d expects %s but got %s", i, argTypes[i], operand.returnType)
 			}
 		}
-		return ASTNode[C]{
+		return astNode[C]{
 			returnType: returnType,
-			Evaluate: func(context C) interface{} {
+			evaluate: func(context C) interface{} {
 				var arguments []reflect.Value
 				if acceptsContext {
 					arguments = append(arguments, reflect.ValueOf(context))
 				}
 
 				for _, operand := range operands {
-					arguments = append(arguments, reflect.ValueOf(operand.Evaluate(context)))
+					arguments = append(arguments, reflect.ValueOf(operand.evaluate(context)))
 				}
 
 				result := funcValue.Call(arguments)
@@ -129,7 +129,7 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 	l.operators[symbol] = operator
 }
 
-func (l *Language[C]) parse(token token, operands []ASTNode[C]) (ASTNode[C], error) {
+func (l *Language[C]) parse(token token, operands []astNode[C]) (astNode[C], error) {
 	if operands == nil {
 		for _, literal := range l.literals {
 			node, err := literal(token)
@@ -138,7 +138,7 @@ func (l *Language[C]) parse(token token, operands []ASTNode[C]) (ASTNode[C], err
 			}
 			return node, nil
 		}
-		return ASTNode[C]{}, fmt.Errorf("unknown literal %s", token.value)
+		return astNode[C]{}, fmt.Errorf("unknown literal %s", token.value)
 	}
 
 	for symbol, builder := range l.operators {
@@ -147,5 +147,5 @@ func (l *Language[C]) parse(token token, operands []ASTNode[C]) (ASTNode[C], err
 		}
 	}
 
-	return ASTNode[C]{}, fmt.Errorf("unknown operator %s", token.value)
+	return astNode[C]{}, fmt.Errorf("unknown operator %s", token.value)
 }

@@ -41,16 +41,16 @@ func TestParser(t *testing.T) {
 	// Combine lexer and language in a parser.
 	p := NewParser(lexer, lang)
 
-	// Run the parser, obtaining either the constructed AST or a parsing error.
-	ast, err := p.Parse()
+	// Run the parser, obtaining either the constructed program or a parsing error.
+	prog, err := p.Parse()
 	if err != nil {
-		t.Fatalf("expected language to be parsed:\n%s", err)
+		t.Fatalf("expected program to be parsed:\n%s", err)
 	}
 
 	// Instantiate the context
 	ctx := &context{}
-	// Evaluate the AST with the context.
-	ast.Evaluate(ctx)
+	// Run the program with the context.
+	prog.Run(ctx)
 
 	actualLog := strings.Join(ctx.Log, "\n")
 	expectedLog := "added 2 and 4\nmultiplied 6 and 7"
@@ -59,7 +59,7 @@ func TestParser(t *testing.T) {
 	}
 }
 
-// Below are the very simple example functions for a very simple mini language.
+// Below are the example functions for a very simple mini language.
 
 type context struct {
 	Log []string

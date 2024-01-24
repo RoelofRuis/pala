@@ -5,19 +5,28 @@ import (
 	"reflect"
 )
 
+type Program[C any] struct {
+	root      astNode[C]
+	variables map[string]astNode[C]
+}
+
+func (p Program[C]) Run(context C) {
+	p.root.evaluate(context)
+}
+
 type Parser[C any] struct {
 	lexer    Lexer
 	language *Language[C]
 
 	currToken token
-	variables map[string]ASTNode[C]
+	variables map[string]astNode[C]
 }
 
 func NewParser[C any](lexer Lexer, language *Language[C]) *Parser[C] {
 	parser := &Parser[C]{
 		lexer:     lexer,
 		language:  language,
-		variables: make(map[string]ASTNode[C]),
+		variables: make(map[string]astNode[C]),
 	}
 	parser.advance()
 	return parser
@@ -28,16 +37,17 @@ func (p *Parser[C]) advance() {
 }
 
 // Parse runs the parser, returning either the root node of the AST or a parse error.
-func (p *Parser[C]) Parse() (ASTNode[C], error) {
-	var statements []ASTNode[C]
+func (p *Parser[C]) Parse() (Program[C], error) {
+	var statements []astNode[C]
 
+parse:
 	for {
 		switch p.currToken.tpe {
 		case tokenVariable:
 			variableName := p.currToken.value
 			node, err := p.parseExpression()
 			if err != nil {
-				return ASTNode[C]{}, err
+				return Program[C]{}, err
 			}
 
 			p.variables[variableName] = node
@@ -45,33 +55,38 @@ func (p *Parser[C]) Parse() (ASTNode[C], error) {
 		case tokenLiteral:
 			node, err := p.parseOperation()
 			if err != nil {
-				return ASTNode[C]{}, err
+				return Program[C]{}, err
 			}
 			statements = append(statements, node)
 
 		case tokenLBracket, tokenRBracket, tokenInvalid:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
+			return Program[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
 
 		case tokenEOF:
-			return ASTNode[C]{
-				returnType: nil,
-				Evaluate: func(context C) interface{} {
-					for _, statement := range statements {
-						statement.Evaluate(context)
-					}
-					return nil
-				},
-			}, nil
+			break parse
 
 		default:
 		}
 
 		p.advance()
 	}
+
+	return Program[C]{
+		root: astNode[C]{
+			returnType: nil,
+			evaluate: func(context C) interface{} {
+				for _, statement := range statements {
+					statement.evaluate(context)
+				}
+				return nil
+			},
+		},
+		variables: p.variables,
+	}, nil
 }
 
-// parseExpression constructs an ASTNode to be assigned to a variable.
-func (p *Parser[C]) parseExpression() (ASTNode[C], error) {
+// parseExpression constructs an astNode to be assigned to a variable.
+func (p *Parser[C]) parseExpression() (astNode[C], error) {
 	p.advance()
 
 	for {
@@ -79,7 +94,7 @@ func (p *Parser[C]) parseExpression() (ASTNode[C], error) {
 		case tokenVariable:
 			variable, exists := p.variables[p.currToken.value]
 			if !exists {
-				return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
+				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
 			}
 			return variable, nil
 
@@ -90,64 +105,64 @@ func (p *Parser[C]) parseExpression() (ASTNode[C], error) {
 			return p.parseList()
 
 		case tokenEOF:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of expression")
+			return astNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of expression")
 
 		default:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
+			return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
 		}
 	}
 }
 
-// parseOperation constructs an ASTNode representing an operation in the given Language.
-func (p *Parser[C]) parseOperation() (ASTNode[C], error) {
+// parseOperation constructs an astNode representing an operation in the given Language.
+func (p *Parser[C]) parseOperation() (astNode[C], error) {
 	operator := p.currToken
 
 	p.advance()
 
-	var operands []ASTNode[C]
+	var operands []astNode[C]
 
 	for {
 		switch p.currToken.tpe {
 		case tokenVariable:
 			variable, exists := p.variables[p.currToken.value]
 			if !exists {
-				return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
+				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
 			}
 			operands = append(operands, variable)
 
 		case tokenLiteral:
 			node, err := p.language.parse(p.currToken, nil)
 			if err != nil {
-				return ASTNode[C]{}, err
+				return astNode[C]{}, err
 			}
 			operands = append(operands, node)
 
 		case tokenLBracket:
 			node, err := p.parseList()
 			if err != nil {
-				return ASTNode[C]{}, err
+				return astNode[C]{}, err
 			}
 			operands = append(operands, node)
 
 		case tokenNewline, tokenEOF:
 			node, err := p.language.parse(operator, operands)
 			if err != nil {
-				return ASTNode[C]{}, err
+				return astNode[C]{}, err
 			}
 			return node, nil
 
 		default:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
+			return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
 		}
 
 		p.advance()
 	}
 }
 
-// parseList constructs an ASTNode that constructs a list literal.
-func (p *Parser[C]) parseList() (ASTNode[C], error) {
+// parseList constructs an astNode that constructs a list literal.
+func (p *Parser[C]) parseList() (astNode[C], error) {
 	var elementType reflect.Type
-	var values []ASTNode[C]
+	var values []astNode[C]
 
 	p.advance()
 
@@ -156,11 +171,11 @@ func (p *Parser[C]) parseList() (ASTNode[C], error) {
 		case tokenLiteral:
 			node, err := p.language.parse(p.currToken, nil)
 			if err != nil {
-				return ASTNode[C]{}, err
+				return astNode[C]{}, err
 			}
 
 			if elementType != nil && elementType != node.returnType {
-				return ASTNode[C]{}, fmtTokenErr(p.currToken, "list must contain a single type")
+				return astNode[C]{}, fmtTokenErr(p.currToken, "list must contain a single type")
 			}
 
 			if elementType == nil {
@@ -171,26 +186,26 @@ func (p *Parser[C]) parseList() (ASTNode[C], error) {
 
 		case tokenRBracket:
 			if elementType == nil {
-				return ASTNode[C]{}, fmtTokenErr(p.currToken, "list must contain at least one element")
+				return astNode[C]{}, fmtTokenErr(p.currToken, "list must contain at least one element")
 			}
 
 			sliceType := reflect.SliceOf(elementType)
-			return ASTNode[C]{
+			return astNode[C]{
 				returnType: sliceType,
-				Evaluate: func(context C) interface{} {
+				evaluate: func(context C) interface{} {
 					result := reflect.MakeSlice(sliceType, 0, 0)
 					for _, value := range values {
-						result = reflect.Append(result, reflect.ValueOf(value.Evaluate(context)))
+						result = reflect.Append(result, reflect.ValueOf(value.evaluate(context)))
 					}
 					return result.Interface()
 				},
 			}, nil
 
 		case tokenEOF:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of list")
+			return astNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of list")
 
 		default:
-			return ASTNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("unexpected list element %s", p.currToken.value))
+			return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("unexpected list element %s", p.currToken.value))
 		}
 
 		p.advance()
