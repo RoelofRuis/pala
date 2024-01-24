@@ -6,18 +6,21 @@ import (
 )
 
 type Parser[C any] struct {
-	lexer    Lexer
-	language *Language[C]
-
-	currToken token
-	variables map[string]astNode[C]
+	lexer            Lexer
+	language         *Language[C]
+	currToken        token
+	program          Program[C]
+	definedVariables map[string]reflect.Type
 }
 
 func NewParser[C any](lexer Lexer, language *Language[C]) *Parser[C] {
 	parser := &Parser[C]{
-		lexer:     lexer,
-		language:  language,
-		variables: make(map[string]astNode[C]),
+		lexer:    lexer,
+		language: language,
+		program: Program[C]{
+			variables: make(map[string]interface{}),
+		},
+		definedVariables: make(map[string]reflect.Type),
 	}
 	parser.advance()
 	return parser
@@ -35,13 +38,19 @@ parse:
 	for {
 		switch p.currToken.tpe {
 		case tokenVariable:
-			variableName := p.currToken.value
-			node, err := p.parseExpression()
+			variableToken := p.currToken
+
+			expr, err := p.parseExpression()
 			if err != nil {
 				return Program[C]{}, err
 			}
 
-			p.variables[variableName] = node
+			node, err := p.writeVariable(variableToken, expr)
+			if err != nil {
+				return Program[C]{}, err
+			}
+
+			statements = append(statements, node)
 
 		case tokenLiteral:
 			node, err := p.parseOperation()
@@ -62,18 +71,17 @@ parse:
 		p.advance()
 	}
 
-	return Program[C]{
-		root: astNode[C]{
-			returnType: nil,
-			evaluate: func(context C) interface{} {
-				for _, statement := range statements {
-					statement.evaluate(context)
-				}
-				return nil
-			},
+	p.program.root = astNode[C]{
+		returnType: nil,
+		evaluate: func(context C) interface{} {
+			for _, statement := range statements {
+				statement.evaluate(context)
+			}
+			return nil
 		},
-		variables: p.variables,
-	}, nil
+	}
+
+	return p.program, nil
 }
 
 // parseExpression constructs an astNode to be assigned to a variable.
@@ -83,11 +91,7 @@ func (p *Parser[C]) parseExpression() (astNode[C], error) {
 	for {
 		switch p.currToken.tpe {
 		case tokenVariable:
-			variable, exists := p.variables[p.currToken.value]
-			if !exists {
-				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
-			}
-			return variable, nil
+			return p.readVariable(p.currToken)
 
 		case tokenLiteral:
 			return p.parseOperation()
@@ -115,9 +119,9 @@ func (p *Parser[C]) parseOperation() (astNode[C], error) {
 	for {
 		switch p.currToken.tpe {
 		case tokenVariable:
-			variable, exists := p.variables[p.currToken.value]
-			if !exists {
-				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered undeclared variable %s", p.currToken.value))
+			variable, err := p.readVariable(p.currToken)
+			if err != nil {
+				return astNode[C]{}, err
 			}
 			operands = append(operands, variable)
 
@@ -201,6 +205,33 @@ func (p *Parser[C]) parseList() (astNode[C], error) {
 
 		p.advance()
 	}
+}
+
+// writeVariable writes a variable to the program variables.
+func (p *Parser[C]) writeVariable(variableName token, value astNode[C]) (astNode[C], error) {
+	p.definedVariables[variableName.value] = value.returnType
+
+	return astNode[C]{
+		returnType: nil,
+		evaluate: func(context C) interface{} {
+			p.program.variables[variableName.value] = value.evaluate(context)
+			return nil
+		},
+	}, nil
+}
+
+// readVariable reads a variable from the program variables.
+func (p *Parser[C]) readVariable(variableName token) (astNode[C], error) {
+	varType, isDefined := p.definedVariables[variableName.value]
+	if !isDefined {
+		return astNode[C]{}, fmtTokenErr(variableName, fmt.Sprintf("encountered undeclared variable %s", variableName.value))
+	}
+	return astNode[C]{
+		returnType: varType,
+		evaluate: func(context C) interface{} {
+			return p.program.variables[variableName.value]
+		},
+	}, nil
 }
 
 // fmtTokenErr is used internally to return a message with line number.

@@ -5,13 +5,6 @@ import (
 	"reflect"
 )
 
-type expression[C any] func(context C) interface{}
-
-type astNode[C any] struct {
-	returnType reflect.Type
-	evaluate   expression[C]
-}
-
 type Language[C any] struct {
 	operators map[string]func(operands []astNode[C]) (astNode[C], error)
 	literals  []func(token token) (astNode[C], error)

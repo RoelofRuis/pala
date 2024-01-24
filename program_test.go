@@ -24,7 +24,7 @@ func Test_EvaluateImmediately(t *testing.T) {
 	prog.Run(ctx)
 
 	actualLog := ctx.String()
-	expectedLog := "added 2 and 4"
+	expectedLog := "added 2 and 3"
 	if actualLog != expectedLog {
 		t.Errorf("expected log to contain '%s' but got '%s'", expectedLog, actualLog)
 	}
