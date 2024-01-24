@@ -196,7 +196,7 @@ func (p *Parser[C]) parseList() (astNode[C], error) {
 				},
 			}, nil
 
-		case tokenEOF:
+		case tokenEOF, tokenNewline:
 			return astNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of list")
 
 		default:
