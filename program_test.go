@@ -8,7 +8,7 @@ import (
 func Test_EvaluateImmediately(t *testing.T) {
 	lang := NewLanguage[*context]()
 	lang.BindOperator("+", plus)
-	lang.BindLiteralEvaluator(parseInt)
+	lang.BindLiteralEvaluator(ParseInt)
 
 	parser := NewParser(
 		NewLexer(strings.NewReader("$a + 2 3")),

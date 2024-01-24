@@ -3,21 +3,38 @@ package pala
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
+// ParseInt is a literal evaluator for integers in string representation.
+func ParseInt(s string) (int, error) {
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(i), nil
+}
+
+// ParseString is a literal evaluator for plain strings.
+func ParseString(s string) (string, error) {
+	return s, nil
+}
+
+// Language contains evaluators that convert string symbols to the appropriate literals and functions.
+// You construct the language by defining available literals and operations using the BindLiteralEvaluator and
+// BindOperator methods.
 type Language[C any] struct {
 	operators map[string]func(operands []astNode[C]) (astNode[C], error)
 	literals  []func(token token) (astNode[C], error)
 }
 
+// NewLanguage constructs an empty Language.
 func NewLanguage[C any]() *Language[C] {
 	return &Language[C]{
 		operators: make(map[string]func(operands []astNode[C]) (astNode[C], error)),
 		literals:  []func(token token) (astNode[C], error){},
 	}
 }
-
-var stringType = reflect.TypeOf("")
 
 // BindLiteralEvaluator adds a literal evaluator to the language.
 // It must be provided with a function with signature `func(string) (any, error)`. This function should try to parse the
@@ -142,3 +159,5 @@ func (l *Language[C]) parse(token token, operands []astNode[C]) (astNode[C], err
 
 	return astNode[C]{}, fmt.Errorf("unknown operator %s", token.value)
 }
+
+var stringType = reflect.TypeOf("")

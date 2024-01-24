@@ -3,7 +3,6 @@ package pala
 import (
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -33,7 +32,7 @@ func TestParser(t *testing.T) {
 	lang.BindOperator("min", smallest)
 	lang.BindOperator("echo", echo)
 	// Bind literal parsers, this call will panic if the function is of the wrong type.
-	lang.BindLiteralEvaluator(parseInt)
+	lang.BindLiteralEvaluator(ParseInt)
 
 	// Create a lexer from any source.
 	lexer := NewLexer(strings.NewReader(program))
@@ -91,12 +90,4 @@ func plus(c *context, a, b int) int {
 
 func echo(s int) {
 	fmt.Printf("%+v\n", s)
-}
-
-func parseInt(s string) (int, error) {
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return int(i), nil
 }
