@@ -139,18 +139,18 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 	l.operators[symbol] = operator
 }
 
-func (l *Language[C]) parse(token token, operands []astNode[C]) (astNode[C], error) {
-	if operands == nil {
-		for _, literal := range l.literals {
-			node, err := literal(token)
-			if err != nil {
-				continue
-			}
-			return node, nil
+func (l *Language[C]) parseLiteral(token token) (astNode[C], error) {
+	for _, literal := range l.literals {
+		node, err := literal(token)
+		if err != nil {
+			continue
 		}
-		return astNode[C]{}, fmt.Errorf("unknown literal %s", token.value)
+		return node, nil
 	}
+	return astNode[C]{}, fmt.Errorf("unknown literal %s", token.value)
+}
 
+func (l *Language[C]) parseOperation(token token, operands []astNode[C]) (astNode[C], error) {
 	for symbol, builder := range l.operators {
 		if symbol == token.value {
 			return builder(operands)

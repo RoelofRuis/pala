@@ -88,6 +88,15 @@ func plus(c *context, a, b int) int {
 	return a + b
 }
 
+func neg(c *context, a int) int {
+	c.Log = append(c.Log, fmt.Sprintf("negated %d", a))
+	return -a
+}
+
+func debug(c *context) {
+	c.Log = append(c.Log, "debug")
+}
+
 func echo(s int) {
 	fmt.Printf("%+v\n", s)
 }

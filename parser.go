@@ -126,7 +126,7 @@ func (p *Parser[C]) parseOperation() (astNode[C], error) {
 			operands = append(operands, variable)
 
 		case tokenLiteral:
-			node, err := p.language.parse(p.currToken, nil)
+			node, err := p.language.parseLiteral(p.currToken)
 			if err != nil {
 				return astNode[C]{}, err
 			}
@@ -140,7 +140,7 @@ func (p *Parser[C]) parseOperation() (astNode[C], error) {
 			operands = append(operands, node)
 
 		case tokenNewline, tokenEOF:
-			node, err := p.language.parse(operator, operands)
+			node, err := p.language.parseOperation(operator, operands)
 			if err != nil {
 				return astNode[C]{}, err
 			}
@@ -164,7 +164,7 @@ func (p *Parser[C]) parseList() (astNode[C], error) {
 	for {
 		switch p.currToken.tpe {
 		case tokenLiteral:
-			node, err := p.language.parse(p.currToken, nil)
+			node, err := p.language.parseLiteral(p.currToken)
 			if err != nil {
 				return astNode[C]{}, err
 			}
