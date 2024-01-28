@@ -56,6 +56,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"echo \"string\"\necho 4",
 			"",
 		},
+		{
+			"nested lists",
+			"$a shortest [[1 2 3 4][5 6 7][8 9]]\nmin $a",
+			"finding min of [8,9]",
+		},
 	}
 
 	for _, tt := range tests {
@@ -67,6 +72,7 @@ func Test_ParseAndRun(t *testing.T) {
 			lang.BindOperator("echo", echo)
 			lang.BindOperator("+", plus)
 			lang.BindOperator("*", mul)
+			lang.BindOperator("shortest", shortest)
 			lang.BindLiteralEvaluator(ParseInt)
 			lang.BindLiteralEvaluator(ParseQuotedString)
 

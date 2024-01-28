@@ -104,3 +104,15 @@ func debug(c *context) {
 func echo(s any) {
 	fmt.Printf("%+v\n", s)
 }
+
+func shortest(lists [][]int) []int {
+	m := math.MaxInt
+	var res []int
+	for _, list := range lists {
+		if len(list) < m {
+			m = len(list)
+			res = list
+		}
+	}
+	return res
+}

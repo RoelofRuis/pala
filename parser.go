@@ -179,6 +179,22 @@ func (p *Parser[C]) parseList() (astNode[C], error) {
 
 			values = append(values, node)
 
+		case tokenLBracket:
+			node, err := p.parseList()
+			if err != nil {
+				return astNode[C]{}, err
+			}
+
+			if elementType != nil && elementType != node.returnType {
+				return astNode[C]{}, fmtTokenErr(p.currToken, "list must contain a single type")
+			}
+
+			if elementType == nil {
+				elementType = node.returnType
+			}
+
+			values = append(values, node)
+
 		case tokenRBracket:
 			if elementType == nil {
 				return astNode[C]{}, fmtTokenErr(p.currToken, "list must contain at least one element")
