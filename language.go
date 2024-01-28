@@ -3,7 +3,9 @@ package pala
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 // ParseInt is a literal evaluator for integers in string representation.
@@ -18,6 +20,15 @@ func ParseInt(s string) (int, error) {
 // ParseString is a literal evaluator for plain strings.
 func ParseString(s string) (string, error) {
 	return s, nil
+}
+
+// ParseQuotedString is a literal evaluator for strings using double quotes.
+func ParseQuotedString(s string) (string, error) {
+	match, _ := regexp.MatchString("^\"[^\"]*\"$", s)
+	if !match {
+		return "", fmt.Errorf("no valid quoted string")
+	}
+	return strings.Trim(s, "\""), nil
 }
 
 // Language contains evaluators that convert string symbols to the appropriate literals and functions.
@@ -111,8 +122,10 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 
 	operator := func(operands []astNode[C]) (astNode[C], error) {
 		for i, operand := range operands {
-			if argTypes[i] != operand.returnType {
-				return astNode[C]{}, fmt.Errorf("operator operand %d expects %s but got %s", i, argTypes[i], operand.returnType)
+			equals := argTypes[i] == operand.returnType
+			implements := argTypes[i].Kind() == reflect.Interface && operand.returnType.Implements(argTypes[i])
+			if !(equals || implements) {
+				return astNode[C]{}, fmt.Errorf("operand %d of operator %s expects %s but got %s", i, symbol, argTypes[i], operand.returnType)
 			}
 		}
 		return astNode[C]{

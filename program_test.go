@@ -51,6 +51,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"min [1 2 3]",
 			"finding min of [1,2,3]",
 		},
+		{
+			"allow any implementer as argument",
+			"echo \"string\"\necho 4",
+			"",
+		},
 	}
 
 	for _, tt := range tests {
@@ -59,9 +64,11 @@ func Test_ParseAndRun(t *testing.T) {
 			lang.BindOperator("dbg", debug)
 			lang.BindOperator("neg", neg)
 			lang.BindOperator("min", smallest)
+			lang.BindOperator("echo", echo)
 			lang.BindOperator("+", plus)
 			lang.BindOperator("*", mul)
 			lang.BindLiteralEvaluator(ParseInt)
+			lang.BindLiteralEvaluator(ParseQuotedString)
 
 			parser := NewParser(
 				NewLexer(strings.NewReader(tt.program)),

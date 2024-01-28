@@ -101,6 +101,6 @@ func debug(c *context) {
 	c.Log = append(c.Log, "debug")
 }
 
-func echo(s int) {
+func echo(s any) {
 	fmt.Printf("%+v\n", s)
 }
