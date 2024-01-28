@@ -41,6 +41,16 @@ func Test_ParseAndRun(t *testing.T) {
 			"$a + 2 3",
 			"added 2 and 3",
 		},
+		{
+			"multiple statements",
+			"$a + 2 3\n$b * $a 5",
+			"added 2 and 3\nmultiplied 5 and 5",
+		},
+		{
+			"working with lists",
+			"min [1 2 3]",
+			"finding min of [1,2,3]",
+		},
 	}
 
 	for _, tt := range tests {
@@ -48,7 +58,9 @@ func Test_ParseAndRun(t *testing.T) {
 			lang := NewLanguage[*context]()
 			lang.BindOperator("dbg", debug)
 			lang.BindOperator("neg", neg)
+			lang.BindOperator("min", smallest)
 			lang.BindOperator("+", plus)
+			lang.BindOperator("*", mul)
 			lang.BindLiteralEvaluator(ParseInt)
 
 			parser := NewParser(
