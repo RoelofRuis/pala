@@ -107,9 +107,11 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 	var zero [0]C
 	var argTypes []reflect.Type
 	acceptsContext := false
+	numExpectedOperands := funcType.NumIn()
 	for i := 0; i < funcType.NumIn(); i++ {
 		if i == 0 && funcType.In(0) == reflect.TypeOf(zero).Elem() {
 			acceptsContext = true
+			numExpectedOperands -= 1
 		} else {
 			argTypes = append(argTypes, funcType.In(i))
 		}
@@ -121,6 +123,9 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 	}
 
 	operator := func(operands []astNode[C]) (astNode[C], error) {
+		if numExpectedOperands != len(operands) {
+			return astNode[C]{}, fmt.Errorf("operator %s expected %d operands but got %d", symbol, numExpectedOperands, len(operands))
+		}
 		for i, operand := range operands {
 			equals := argTypes[i] == operand.returnType
 			implements := argTypes[i].Kind() == reflect.Interface && operand.returnType.Implements(argTypes[i])
