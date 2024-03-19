@@ -3,33 +3,7 @@ package pala
 import (
 	"fmt"
 	"reflect"
-	"regexp"
-	"strconv"
-	"strings"
 )
-
-// ParseInt is a literal evaluator for integers in string representation.
-func ParseInt(s string) (int, error) {
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		return 0, err
-	}
-	return int(i), nil
-}
-
-// ParseString is a literal evaluator for plain strings.
-func ParseString(s string) (string, error) {
-	return s, nil
-}
-
-// ParseQuotedString is a literal evaluator for strings using double quotes.
-func ParseQuotedString(s string) (string, error) {
-	match, _ := regexp.MatchString("^\"[^\"]*\"$", s)
-	if !match {
-		return "", fmt.Errorf("no valid quoted string")
-	}
-	return strings.Trim(s, "\""), nil
-}
 
 // Language contains evaluators that convert string symbols to the appropriate literals and functions.
 // You construct the language by defining available literals and operations using the BindLiteralEvaluator and
