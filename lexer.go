@@ -17,6 +17,8 @@ const (
 	tokenVariable
 	tokenLBracket
 	tokenRBracket
+	tokenLParen
+	tokenRParen
 	tokenComment
 	tokenEOF
 	tokenInvalid
@@ -29,11 +31,10 @@ type token struct {
 }
 
 type basicLexer struct {
-	scanner   io.RuneScanner
-	next      func(l *basicLexer) token
-	currDepth int
-	currCh    rune
-	currLine  int
+	scanner  io.RuneScanner
+	next     func(l *basicLexer) token
+	currCh   rune
+	currLine int
 }
 
 func NewLexer(scanner io.RuneScanner) Lexer {
@@ -87,13 +88,11 @@ func (l *basicLexer) scanWord() string {
 func readLine(l *basicLexer) token {
 	switch {
 	case l.currCh == '(':
-		l.currDepth++
 		l.readChar()
-		return l.next(l)
+		return l.makeToken(tokenLParen, "(")
 	case l.currCh == ')':
-		l.currDepth--
 		l.readChar()
-		return l.next(l)
+		return l.makeToken(tokenRParen, ")")
 	case l.currCh == '[':
 		l.readChar()
 		return l.makeToken(tokenLBracket, "[")
@@ -104,9 +103,6 @@ func readLine(l *basicLexer) token {
 		return l.makeToken(tokenComment, l.scanLine())
 	case l.currCh == '\n':
 		l.readChar()
-		if l.currDepth > 0 {
-			return l.next(l)
-		}
 		return l.makeToken(tokenNewline, "\n")
 	case l.currCh == '$':
 		return l.makeToken(tokenVariable, l.scanWord())

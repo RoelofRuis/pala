@@ -14,6 +14,8 @@ Comment    <- '#.+'
 Literal    <- '.+'
 ```
 
+Optionally, the operands of an operation may be wrapped in parentheses `()` to allow them to be on multiple lines.
+
 While the grammar of the language is fixed, the operators and literals are bound dynamically. Types are however still
 enforced.
 

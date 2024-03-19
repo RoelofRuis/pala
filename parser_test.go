@@ -16,6 +16,16 @@ func Test_FailToParse(t *testing.T) {
 			"+ 1",
 			"operator + expected 2 operands but got 1",
 		},
+		{
+			"missing closing parenthesis",
+			"+ (\n 4 5",
+			"[line 1] missing closing parenthesis",
+		},
+		{
+			"duplicate opening parentheses",
+			"+ (( 4 5 ))",
+			"[line 0] invalid additional opening parenthesis",
+		},
 	}
 
 	for _, tt := range tests {

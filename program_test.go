@@ -37,6 +37,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"added 2 and 3",
 		},
 		{
+			"binary operator with additional spaces",
+			"+  2      3",
+			"added 2 and 3",
+		},
+		{
 			"binary operator save to variable",
 			"$a + 2 3",
 			"added 2 and 3",
@@ -60,6 +65,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"nested lists",
 			"$a shortest [[1 2 3 4][5 6 7][8 9]]\nmin $a",
 			"finding min of [8,9]",
+		},
+		{
+			"statement split on multiple lines",
+			"+ (\n    4\n    5\n)",
+			"added 4 and 5",
 		},
 	}
 

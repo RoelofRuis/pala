@@ -59,13 +59,13 @@ parse:
 			}
 			statements = append(statements, node)
 
-		case tokenLBracket, tokenRBracket, tokenInvalid:
-			return Program[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
-
 		case tokenEOF:
 			break parse
 
+		case tokenComment:
+
 		default:
+			return Program[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
 		}
 
 		p.advance()
@@ -111,6 +111,7 @@ func (p *Parser[C]) parseExpression() (astNode[C], error) {
 // parseOperation constructs an astNode representing an operation in the given Language.
 func (p *Parser[C]) parseOperation() (astNode[C], error) {
 	operator := p.currToken
+	multiLine := false
 
 	p.advance()
 
@@ -118,6 +119,18 @@ func (p *Parser[C]) parseOperation() (astNode[C], error) {
 
 	for {
 		switch p.currToken.tpe {
+		case tokenLParen:
+			if multiLine {
+				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("invalid additional opening parenthesis"))
+			}
+			multiLine = true
+
+		case tokenRParen:
+			if !multiLine {
+				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("invalid closing parenthesis"))
+			}
+			multiLine = false
+
 		case tokenVariable:
 			variable, err := p.readVariable(p.currToken)
 			if err != nil {
@@ -139,7 +152,20 @@ func (p *Parser[C]) parseOperation() (astNode[C], error) {
 			}
 			operands = append(operands, node)
 
-		case tokenNewline, tokenEOF:
+		case tokenNewline:
+			if multiLine {
+				break
+			}
+			node, err := p.language.parseOperation(operator, operands)
+			if err != nil {
+				return astNode[C]{}, err
+			}
+			return node, nil
+
+		case tokenEOF:
+			if multiLine {
+				return astNode[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("missing closing parenthesis"))
+			}
 			node, err := p.language.parseOperation(operator, operands)
 			if err != nil {
 				return astNode[C]{}, err
