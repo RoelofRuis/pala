@@ -71,6 +71,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"+ (\n    4\n    5\n)",
 			"added 4 and 5",
 		},
+		{
+			"empty lines between statements",
+			"+ 3 4\n\nmin [2 3]",
+			"added 3 and 4\nfinding min of [2,3]",
+		},
 	}
 
 	for _, tt := range tests {

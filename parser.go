@@ -62,7 +62,7 @@ parse:
 		case tokenEOF:
 			break parse
 
-		case tokenComment:
+		case tokenComment, tokenNewline:
 
 		default:
 			return Program[C]{}, fmtTokenErr(p.currToken, fmt.Sprintf("encountered illegal token %s", p.currToken.value))
