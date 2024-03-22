@@ -20,3 +20,8 @@ While the grammar of the language is fixed, the operators and literals are bound
 enforced.
 
 See the comments in `pala_test.go` for an example on how to use.
+
+#### Literal evaluators
+Several literal evaluators are provided out of the box in `util.go`. To use them, just add them to the language.
+Make sure to add your evaluators from narrow to wide match; the statement will be matched to the evaluators in order, 
+the first one that matches is used.

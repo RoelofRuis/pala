@@ -3,6 +3,7 @@ package pala
 import (
 	"fmt"
 	"math/big"
+	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
@@ -47,4 +48,12 @@ func ParseRational(s string) (*big.Rat, error) {
 	}
 
 	return big.NewRat(numerator, denominator), nil
+}
+
+// ParseRandomInt is a literal evaluator for random integers, indicated by the string "?int"
+func ParseRandomInt(s string) (int, error) {
+	if s == "?int" {
+		return rand.Int(), nil
+	}
+	return 0, fmt.Errorf("no random int")
 }

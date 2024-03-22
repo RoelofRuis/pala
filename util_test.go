@@ -177,3 +177,15 @@ func TestParseRational(t *testing.T) {
 		})
 	}
 }
+
+func TestParseRandomInt(t *testing.T) {
+	_, err := ParseRandomInt("invalid")
+	if err == nil {
+		t.Errorf("expected error")
+	}
+
+	_, err = ParseRandomInt("?int")
+	if err != nil {
+		t.Errorf("did not expect error")
+	}
+}
