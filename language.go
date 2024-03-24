@@ -143,13 +143,11 @@ func (l *Language[C]) parseLiteral(token token) (astNode[C], error) {
 }
 
 func (l *Language[C]) parseOperation(token token, operands []astNode[C]) (astNode[C], error) {
-	for symbol, builder := range l.operators {
-		if symbol == token.value {
-			return builder(operands)
-		}
+	operator, has := l.operators[token.value]
+	if !has {
+		return astNode[C]{}, fmt.Errorf("unknown operator %s", token.value)
 	}
-
-	return astNode[C]{}, fmt.Errorf("unknown operator %s", token.value)
+	return operator(operands)
 }
 
 var stringType = reflect.TypeOf("")
