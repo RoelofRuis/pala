@@ -67,6 +67,11 @@ func Test_ParseAndRun(t *testing.T) {
 			"finding min of [8,9]",
 		},
 		{
+			"empty list",
+			"$a min []\n",
+			"finding min of []",
+		},
+		{
 			"statement split on multiple lines",
 			"+ (\n    4\n    5\n)",
 			"added 4 and 5",

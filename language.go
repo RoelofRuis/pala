@@ -49,12 +49,7 @@ func (l *Language[C]) BindLiteralEvaluator(evaluator interface{}) {
 		if err != nil {
 			return astNode[C]{}, err.(error)
 		}
-		return astNode[C]{
-			returnType: returnType,
-			evaluate: func(context C) interface{} {
-				return value
-			},
-		}, nil
+		return valueNode[C](returnType, value), nil
 	}
 
 	l.literals = append(l.literals, primitive)
@@ -101,31 +96,21 @@ func (l *Language[C]) BindOperator(symbol string, constructor interface{}) {
 			return astNode[C]{}, fmt.Errorf("operator %s expected %d operands but got %d", symbol, numExpectedOperands, len(operands))
 		}
 		for i, operand := range operands {
-			equals := argTypes[i] == operand.returnType
-			implements := argTypes[i].Kind() == reflect.Interface && operand.returnType.Implements(argTypes[i])
-			if !(equals || implements) {
-				return astNode[C]{}, fmt.Errorf("operand %d of operator %s expects %s but got %s", i, symbol, argTypes[i], operand.returnType)
+			if argTypes[i].Kind() == reflect.Slice && operand.returnType == nil {
+				// slice types accept nil: this equates to an empty slice of the appropriate type.
+				operands[i] = emptySliceNode[C](argTypes[i])
+				continue
 			}
+			if argTypes[i] == operand.returnType {
+				continue
+			}
+			if argTypes[i].Kind() == reflect.Interface && operand.returnType.Implements(argTypes[i]) {
+				continue
+			}
+
+			return astNode[C]{}, fmt.Errorf("operand %d of operator %s expects %s but got %v", i, symbol, argTypes[i], operand.returnType)
 		}
-		return astNode[C]{
-			returnType: returnType,
-			evaluate: func(context C) interface{} {
-				var arguments []reflect.Value
-				if acceptsContext {
-					arguments = append(arguments, reflect.ValueOf(context))
-				}
-
-				for _, operand := range operands {
-					arguments = append(arguments, reflect.ValueOf(operand.evaluate(context)))
-				}
-
-				result := funcValue.Call(arguments)
-				if returnType == nil {
-					return nil
-				}
-				return result[0].Interface()
-			},
-		}, nil
+		return operatorNode[C](returnType, acceptsContext, funcValue, operands), nil
 	}
 
 	l.operators[symbol] = operator

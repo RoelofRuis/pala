@@ -71,15 +71,7 @@ parse:
 		p.advance()
 	}
 
-	p.program.root = astNode[C]{
-		returnType: nil,
-		evaluate: func(context C) interface{} {
-			for _, statement := range statements {
-				statement.evaluate(context)
-			}
-			return nil
-		},
-	}
+	p.program.root = rootNode[C](statements)
 
 	return p.program, nil
 }
@@ -223,20 +215,11 @@ func (p *Parser[C]) parseList() (astNode[C], error) {
 
 		case tokenRBracket:
 			if elementType == nil {
-				return astNode[C]{}, fmtTokenErr(p.currToken, "list must contain at least one element")
+				return nilNode[C](), nil
 			}
 
 			sliceType := reflect.SliceOf(elementType)
-			return astNode[C]{
-				returnType: sliceType,
-				evaluate: func(context C) interface{} {
-					result := reflect.MakeSlice(sliceType, 0, 0)
-					for _, value := range values {
-						result = reflect.Append(result, reflect.ValueOf(value.evaluate(context)))
-					}
-					return result.Interface()
-				},
-			}, nil
+			return sliceNode[C](sliceType, values), nil
 
 		case tokenEOF, tokenNewline:
 			return astNode[C]{}, fmtTokenErr(p.currToken, "unexpected end of list")

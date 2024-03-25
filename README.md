@@ -8,7 +8,7 @@ Program    <- Expression ( '\n' Expression )* '\n'?
 Expression <- Assignment | Operation | Comment
 Assignment <- Variable ( Variable | List | Literal | Operation )
 Operation  <- Literal ( List | Variable | Literal )*
-List       <- '[' ( Variable | Literal )+ ']'
+List       <- '[' ( Variable | Literal )* ']'
 Variable   <- '$.+'
 Comment    <- '#.+'
 Literal    <- '.+'
